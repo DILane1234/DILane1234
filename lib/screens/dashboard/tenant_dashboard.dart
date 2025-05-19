@@ -1,6 +1,5 @@
+import 'package:ecogestion/widgets/consumption_chart.dart';
 import 'package:flutter/material.dart';
-
-// Importez le service Firebase
 import 'package:ecogestion/services/firebase_service.dart';
 import 'package:ecogestion/config/routes.dart';
 
@@ -34,6 +33,7 @@ class _TenantDashboardState extends State<TenantDashboard> {
       // await _firebaseService.getRentals();
       // await _firebaseService.getPayments();
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Erreur lors de l\'actualisation: $e'),
@@ -53,8 +53,15 @@ class _TenantDashboardState extends State<TenantDashboard> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tableau de bord locataire'),
+        title: const Text('Tableau de bord'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.person),
+            onPressed: () {
+              Navigator.pushNamed(context, AppRoutes.profile);
+            },
+            tooltip: 'Mon Profil',
+          ),
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
@@ -65,8 +72,9 @@ class _TenantDashboardState extends State<TenantDashboard> {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
+              final BuildContext currentContext = context;
               final bool? confirm = await showDialog<bool>(
-                context: context,
+                context: currentContext,
                 builder: (BuildContext context) {
                   return AlertDialog(
                     title: const Text('Déconnexion'),
@@ -90,7 +98,7 @@ class _TenantDashboardState extends State<TenantDashboard> {
               if (confirm == true) {
                 await _firebaseService.signOut();
                 if (mounted) {
-                  Navigator.pushReplacementNamed(context, AppRoutes.login);
+                  Navigator.pushReplacementNamed(currentContext, AppRoutes.login);
                 }
               }
             },
@@ -217,217 +225,131 @@ class _TenantDashboardState extends State<TenantDashboard> {
   }
 
   Widget _buildConsumptionTab() {
+    // Données fictives pour la consommation mensuelle
+    final List<double> monthlyData = [
+      120, 140, 160, 180, 200, 220, 
+      250, 230, 210, 190, 170, 150
+    ];
+    
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Votre consommation énergétique',
+            'Ma consommation',
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 20),
-
-          // Carte de consommation actuelle
-          Card(
-            elevation: 3,
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Consommation actuelle',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.green.shade100,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          '-5% vs mois dernier',
-                          style: TextStyle(
-                            color: Colors.green.shade700,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    '250 kWh',
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text('Ce mois-ci'),
-
-                  const SizedBox(height: 16),
-                  // Espace pour un futur graphique
-                  Container(
-                    height: 150,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade200,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Center(
-                      child: Text('Graphique de consommation'),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          const SizedBox(height: 24),
+          
+          // Graphique de consommation mensuelle
+          ConsumptionChart(
+            monthlyData: monthlyData,
+            title: 'Consommation mensuelle',
+            barColor: Colors.green,
           ),
-
-          const SizedBox(height: 20),
-
-          // Répartition par type d'énergie
+          
+          const SizedBox(height: 24),
+          
+          // Statistiques de consommation
           const Text(
-            'Répartition par type d\'énergie',
+            'Statistiques',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 12),
-
-          // Liste des types d'énergie
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  _buildEnergyTypeRow(
-                    'Électricité',
-                    180,
-                    Colors.blue.shade700,
-                    '72%',
-                  ),
-                  const Divider(),
-                  _buildEnergyTypeRow(
-                    'Eau chaude',
-                    45,
-                    Colors.orange.shade700,
-                    '18%',
-                  ),
-                  const Divider(),
-                  _buildEnergyTypeRow(
-                    'Chauffage',
-                    25,
-                    Colors.red.shade700,
-                    '10%',
-                  ),
-                ],
+          const SizedBox(height: 16),
+          
+          // Cartes de statistiques
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatCard(
+                  'Moyenne', 
+                  '195 kWh', 
+                  Icons.show_chart,
+                  Colors.blue,
+                ),
               ),
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
-          // Objectifs d'économie
-          const Text(
-            'Vos objectifs d\'économie',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Objectif mensuel: 230 kWh',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 12),
-                  LinearProgressIndicator(
-                    value: 0.75,
-                    backgroundColor: Colors.grey.shade200,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      Colors.green.shade700,
-                    ),
-                    minHeight: 10,
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Vous êtes en bonne voie pour atteindre votre objectif!',
-                    style: TextStyle(
-                      color: Colors.green,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildStatCard(
+                  'Maximum', 
+                  '250 kWh', 
+                  Icons.arrow_upward,
+                  Colors.red,
+                ),
               ),
-            ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatCard(
+                  'Minimum', 
+                  '120 kWh', 
+                  Icons.arrow_downward,
+                  Colors.green,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildStatCard(
+                  'Total annuel', 
+                  '2320 kWh', 
+                  Icons.calendar_today,
+                  Colors.purple,
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildEnergyTypeRow(
-    String type,
-    int value,
-    Color color,
-    String percentage,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        children: [
-          Container(
-            width: 16,
-            height: 16,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              type,
-              style: const TextStyle(fontWeight: FontWeight.w500),
+  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, color: color, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
-          ),
-          Text(
-            '$value kWh',
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(width: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade200,
-              borderRadius: BorderRadius.circular(12),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
             ),
-            child: Text(
-              percentage,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
+  // Supprimez la méthode _buildEnergyTypeRow qui n'est pas utilisée
+  
   Widget _buildHistoryTab() {
     return ListView.builder(
       padding: const EdgeInsets.all(16.0),
-      itemCount: 12, // 12 derniers mois
+      itemCount: 12, 
       itemBuilder: (context, index) {
         // Calcul du mois (mois actuel - index)
         final now = DateTime.now();

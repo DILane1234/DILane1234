@@ -33,6 +33,8 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
       // await _firebaseService.getProperties();
       // await _firebaseService.getNotifications();
     } catch (e) {
+
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Erreur lors de l\'actualisation: $e'),
@@ -52,8 +54,15 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tableau de bord propriétaire'),
+        title: const Text('Tableau de bord'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.person),
+            onPressed: () {
+              Navigator.pushNamed(context, AppRoutes.profile);
+            },
+            tooltip: 'Mon Profil',
+          ),
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
@@ -64,7 +73,8 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
-              // Afficher une boîte de dialogue de confirmation
+              // Stocker le contexte dans une variable locale n'est pas suffisant
+              // car nous devons vérifier si le State est toujours monté
               final bool? confirm = await showDialog<bool>(
                 context: context,
                 builder: (BuildContext context) {
@@ -91,6 +101,7 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
               if (confirm == true) {
                 await _firebaseService.signOut();
                 if (mounted) {
+                  // Utiliser context directement après avoir vérifié mounted
                   Navigator.pushReplacementNamed(context, AppRoutes.login);
                 }
               }
@@ -329,59 +340,60 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
           ),
           const SizedBox(height: 24),
           
-          // Carte pour la consommation mensuelle
+          // Bouton pour accéder au compteur intelligent
           Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Consommation mensuelle',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 16),
-                  // Placeholder pour le graphique
-                  Container(
-                    height: 200,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade200,
-                      borderRadius: BorderRadius.circular(8),
+            elevation: 4,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            child: InkWell(
+              onTap: () {
+                Navigator.pushNamed(
+                  context, 
+                  AppRoutes.smartMeterDetail,
+                  arguments: 'compteur1', // ID du compteur
+                );
+              },
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade100,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.electric_meter,
+                        color: Colors.green.shade700,
+                      ),
                     ),
-                    child: const Center(
-                      child: Text('Graphique de consommation mensuelle'),
+                    const SizedBox(width: 16),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Compteur Intelligent',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Consulter les données en temps réel',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          
-          // Carte pour la comparaison annuelle
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Comparaison annuelle',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 16),
-                  // Placeholder pour le graphique
-                  Container(
-                    height: 200,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade200,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Center(
-                      child: Text('Graphique de comparaison annuelle'),
-                    ),
-                  ),
-                ],
+                    const Icon(Icons.arrow_forward_ios, size: 16),
+                  ],
+                ),
               ),
             ),
           ),

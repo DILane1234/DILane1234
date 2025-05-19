@@ -1,5 +1,10 @@
+import 'dart:io';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:ecogestion/models/user_model.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart';
 
 class FirebaseService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -113,7 +118,9 @@ class FirebaseService {
       }
       return null;
     } catch (e) {
-      print('Erreur lors de la récupération du nom: $e');
+      if (kDebugMode) {
+        print('Erreur lors de la récupération du nom: $e');
+      }
       return null;
     }
   }
@@ -171,8 +178,99 @@ class FirebaseService {
         rethrow;
       }
     } catch (e) {
-      print('Erreur lors du changement de mot de passe: $e');
+      if (kDebugMode) {
+        print('Erreur lors du changement de mot de passe: $e');
+      }
       rethrow;
+    }
+  }
+
+  // Récupérer les données du profil utilisateur
+  Future<UserModel?> getUserProfile() async {
+    try {
+      User? currentUser = _auth.currentUser;
+      if (currentUser == null) return null;
+  
+      DocumentSnapshot userDoc = await _firestore
+          .collection('users')
+          .doc(currentUser.uid)
+          .get();
+  
+      if (userDoc.exists) {
+        return UserModel.fromMap(
+          userDoc.data() as Map<String, dynamic>,
+          currentUser.uid,
+        );
+      }
+      return null;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Erreur lors de la récupération du profil: $e');
+      }
+      return null;
+    }
+  }
+  
+  // Mettre à jour le profil utilisateur
+  Future<bool> updateUserProfile(UserModel updatedUser) async {
+    try {
+      User? currentUser = _auth.currentUser;
+      if (currentUser == null) return false;
+  
+      await _firestore
+          .collection('users')
+          .doc(currentUser.uid)
+          .update(updatedUser.toMap());
+  
+      // Mettre à jour le displayName dans Firebase Auth si nécessaire
+      if (updatedUser.displayName != null && 
+          updatedUser.displayName != currentUser.displayName) {
+        await currentUser.updateDisplayName(updatedUser.displayName);
+      }
+  
+      return true;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Erreur lors de la mise à jour du profil: $e');
+      }
+      return false;
+    }
+  }
+  
+  // Mettre à jour la photo de profil
+  Future<bool> updateProfilePicture(String imagePath) async {
+    try {
+      User? currentUser = _auth.currentUser;
+      if (currentUser == null) return false;
+  
+      // Créer une référence au stockage Firebase
+      final storageRef = FirebaseStorage.instance
+          .ref()
+          .child('profile_pictures')
+          .child('${currentUser.uid}.jpg');
+  
+      // Télécharger l'image
+      final file = File(imagePath);
+      await storageRef.putFile(file);
+  
+      // Obtenir l'URL de téléchargement
+      final downloadURL = await storageRef.getDownloadURL();
+  
+      // Mettre à jour l'URL dans Firestore
+      await _firestore
+          .collection('users')
+          .doc(currentUser.uid)
+          .update({'photoURL': downloadURL});
+  
+      // Mettre à jour l'URL dans Firebase Auth
+      await currentUser.updatePhotoURL(downloadURL);
+  
+      return true;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Erreur lors de la mise à jour de la photo de profil: $e');
+      }
+      return false;
     }
   }
 }

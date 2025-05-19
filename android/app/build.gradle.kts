@@ -8,7 +8,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.eco_gestion"
+    namespace = "com.example.ecogestion"  // Modifier pour correspondre à AndroidManifest.xml
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -22,14 +22,12 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.eco_gestion"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
+        applicationId = "com.example.ecogestion"  // Modifier pour correspondre à AndroidManifest.xml
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        multiDexEnabled = true  // Ajouter cette ligne
     }
 
     buildTypes {
@@ -51,6 +49,12 @@ dependencies {
     
     // Add the dependency for Firebase Authentication
     implementation("com.google.firebase:firebase-auth")
+    
+    // Ajouter cette dépendance pour le support multidex
+    implementation("androidx.multidex:multidex:2.0.1")
+    
+    // Ajouter cette dépendance pour le désucrage Java 8
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:1.1.5")
 }
 
 android {

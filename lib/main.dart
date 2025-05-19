@@ -4,12 +4,22 @@ import 'package:provider/provider.dart';
 import 'package:ecogestion/config/routes.dart';
 import 'package:ecogestion/config/theme_provider.dart';
 import 'package:ecogestion/firebase_options.dart';
+import 'package:ecogestion/services/mqtt_service.dart';
+import 'package:ecogestion/services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  
+  // Initialiser les services
+  final notificationService = NotificationService();
+  await notificationService.initialize();
+  
+  final mqttService = MqttService();
+  mqttService.connect(); // Connexion asynchrone au broker MQTT
+  
   runApp(
     ChangeNotifierProvider(
       create: (context) => ThemeProvider(),

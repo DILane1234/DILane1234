@@ -28,54 +28,52 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   // Méthode de connexion
-  void _signIn() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isLoading = true;
-        _errorMessage = null;
-      });
+void _signIn() async {
+  if (_formKey.currentState!.validate()) {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
 
-      try {
-        await _firebaseService.signInWithEmailAndPassword(
-          _emailController.text.trim(),
-          _passwordController.text,
+    try {
+      await _firebaseService.signInWithEmailAndPassword(
+        _emailController.text.trim(),
+        _passwordController.text,
+      );
+
+      // Ne pas appeler context tant qu'on n'a pas vérifié mounted
+      final String? userType = await _firebaseService.getUserType();
+
+      if (!mounted) return;
+
+      if (userType == 'owner') {
+        Navigator.pushReplacementNamed(context, AppRoutes.ownerDashboard);
+      } else if (userType == 'tenant') {
+        Navigator.pushReplacementNamed(context, AppRoutes.tenantDashboard);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Type d\'utilisateur non défini')),
         );
-
-        if (mounted) {
-          // Récupérer le type d'utilisateur et rediriger vers la page appropriée
-          String? userType = await _firebaseService.getUserType();
-
-          if (userType == 'owner') {
-            Navigator.pushReplacementNamed(context, AppRoutes.ownerDashboard);
-          } else if (userType == 'tenant') {
-            Navigator.pushReplacementNamed(context, AppRoutes.tenantDashboard);
-          } else {
-            // Gérer le cas où le type d'utilisateur n'est pas défini
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Type d\'utilisateur non défini')),
-            );
-          }
-        }
-      } on FirebaseAuthException {
+      }
+    } on FirebaseAuthException {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = 'Impossible de se connecter. Vérifiez vos identifiants.';
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = 'Impossible de se connecter. Vérifiez vos identifiants.';
+      });
+    } finally {
+      if (mounted) {
         setState(() {
-          // Utiliser le message générique au lieu de _getMessageFromErrorCode
-          _errorMessage = 'Impossible de se connecter. Vérifiez vos identifiants.';
+          _isLoading = false;
         });
-      } catch (e) {
-        setState(() {
-          // Utiliser le même message générique pour toutes les erreurs
-          _errorMessage = 'Impossible de se connecter. Vérifiez vos identifiants.';
-        });
-      } finally {
-        if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
-        }
       }
     }
   }
-
+}
   // Suppression de la méthode _getMessageFromErrorCode qui n'est pas utilisée
 
   @override

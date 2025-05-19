@@ -33,7 +33,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       });
 
       try {
-        await _firebaseService.sendPasswordResetEmail(_emailController.text.trim());
+        await _firebaseService.resetPassword(_emailController.text.trim());
         
         setState(() {
           _isSuccess = true;
